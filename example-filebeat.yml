@@ -1,0 +1,70 @@
+filebeat.inputs:
+  - type: filestream
+    id: api-service-logs
+    enabled: true
+    paths:
+      - 'C:\Users\PS0174\Desktop\elk-docker\logs\*\*\*\logs.log'
+      - 'C:\Users\PS0174\Desktop\elk-docker\logs\*\*\*\logs.txt'
+    fields_under_root: true
+    fields:
+      log_source: api-service-logs
+      environment: production
+    scan_frequency: 5s
+    clean_inactive: 72h
+    ignore_older: 48h
+    close_inactive: 1m
+    close_renamed: true
+    close_removed: true
+    clean_removed: true
+    read_from_head: true
+
+    multiline:
+      pattern: '^\['
+      negate: true
+      match: after
+
+    filestream:
+      fingerprint:
+        length: 64    # reduced from 1024 to allow small files
+        offset: 0
+      min_file_size: 0
+
+
+processors:
+  - dissect:
+      tokenizer: "C:\\Users\\PS0174\\Desktop\\elk-docker\\logs\\%{log_date}\\%{log_service}\\%{log_api}\\%{filename}"
+      field: "log.file.path"
+      target_prefix: ""
+      ignore_failure: true
+
+  - script:
+      lang: javascript
+      id: log_identifier
+      source: >
+        function process(event) {
+          var service = event.Get("log_service");
+          var api = event.Get("log_api");
+          if (service && api) event.Put("log_identifier", service + "::" + api);
+        }
+
+
+  # Add host metadata
+  - add_host_metadata: ~
+
+  # Add environment field (redundant if already set in fields)
+  - add_fields:
+      target: ""
+      fields:
+        environment: production
+
+
+# add user base role in kibana
+# alerts
+# log filter
+# using pods of elk in kubernetes
+# 
+
+output.logstash:
+  hosts: ["localhost:5044"]
+  ssl.enabled: false
+
