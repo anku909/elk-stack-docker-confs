@@ -4,8 +4,4 @@ node_modules
 
 /logs/*
 
-dates.txt
-
-date_ext.py
-
-pennyless.txt
+*.log

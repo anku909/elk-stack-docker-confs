@@ -111,7 +111,7 @@ function generate_logs(sourceFile , service, apiname) {
 create_logs_structure();
 
 
-generate_logs('pennydroppipe5.log', 'sprintverify', 'pennydrop');
+generate_logs('Pennydroppipe5.log', 'sprintverify', 'pennydrop');
 generate_logs('ip_geo_lookupfile.log', 'sprintverify', 'ip_geo_lookup');
 generate_logs('voter_verify.log', 'sprintverify', 'voterverify');
 generate_logs('pennyless.log', 'sprintverify', 'pennyless');
