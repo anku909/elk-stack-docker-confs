@@ -3,3 +3,9 @@ node_modules
 /logs
 
 /logs/*
+
+dates.txt
+
+date_ext.py
+
+pennyless.txt
