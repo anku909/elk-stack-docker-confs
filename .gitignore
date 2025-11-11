@@ -5,3 +5,13 @@ node_modules
 /logs/*
 
 *.log
+
+
+date_ext.py
+
+redis-data
+
+
+.filebeat-registry
+
+argocd

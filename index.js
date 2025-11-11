@@ -211,4 +211,4 @@ function startLogGenerator(logsPerSecond = 5, intervalMs = 5000) {
 }
 
 // Start
-startLogGenerator(10, 1000); // Change as needed
+startLogGenerator(25000, 1000); // Change as needed

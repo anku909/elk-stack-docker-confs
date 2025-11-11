@@ -1,0 +1,85 @@
+# ====================== INPUT ======================
+input {
+  beats {
+    port => 5044
+    client_inactivity_timeout => 600    # ⏱ Keep Filebeat sessions alive
+  }
+}
+
+# ====================== FILTER ======================
+filter {
+  # ---------- 1️⃣ Parse JSON logs ----------
+  if [message] {
+    json {
+      source => "message"               # Read raw JSON
+      target => "parsed_message"        # Store parsed data
+      skip_on_invalid_json => true
+      add_tag => ["_jsonparsed"]
+    }
+  }
+
+  # ---------- 2️⃣ Use the original log timestamp ----------
+  if [parsed_message][data][timestamp] {
+    date {
+      match => [
+        "[parsed_message][data][timestamp]",
+        "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
+        "yyyy-MM-dd'T'HH:mm:ssZ"
+      ]
+      timezone => "Asia/Kolkata"
+      target => "@timestamp"
+      remove_field => ["[parsed_message][data][timestamp]"]
+    }
+  }
+
+  # ---------- 3️⃣ Flatten useful fields ----------
+  mutate {
+    rename => {
+      "[parsed_message][service]" => "service"
+      "[parsed_message][api]" => "api"
+      "[parsed_message][level]" => "log_level"
+      "[parsed_message][message]" => "log_message"
+    }
+
+    remove_field => [
+      "log.offset",
+      "log.file.inode",
+      "log.file.device_id",
+      "ecs.version",
+      "message",
+      "tags",
+      "[parsed_message]"
+    ]
+  }
+
+  # ---------- 4️⃣ Clean up timestamp failures ----------
+  if "_dateparsefailure" in [tags] {
+    mutate { remove_tag => ["_dateparsefailure"] }
+  }
+}
+
+# ====================== OUTPUT ======================
+output {
+  stdout { codec => rubydebug }   # 🧪 Enable only for debugging
+
+  elasticsearch {
+    hosts => ["http://elasticsearch:9200"]
+    user => "${ELASTIC_USERNAME}"
+    password => "${ELASTIC_PASSWORD}"
+    ecs_compatibility => "v8"
+    index => "%{[service]}-%{[api]}-%{+YYYY.MM.dd}"
+    manage_template => false
+    ilm_enabled => false
+    timeout => 30                     # Request timeout
+    pool_max => 1000                  # Control concurrent connections
+  }
+}
+
+# ====================== SUMMARY ======================
+# ✅ Accepts logs from Filebeat (Beats input)
+# ✅ Parses JSON safely, handles timestamps correctly
+# ✅ Uses log-created timestamp (@timestamp)
+# ✅ Cleans unneeded fields to reduce storage
+# ✅ Optimized ES output for v8 with connection pooling
+# ✅ Creates daily indices per service/api
+# =====================================================
